@@ -1,3 +1,10 @@
+(library
+ (name any)
+ (modules any)
+ (libraries asn1-combinators)
+ (preprocess (pps ppx_deriving.std)))
+
 (executable
  (name fuzz)
- (libraries asn1-combinators))
+ (modules fuzz)
+ (libraries any asn1-combinators))
