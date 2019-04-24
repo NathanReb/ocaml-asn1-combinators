@@ -1,25 +1,9 @@
-module Derivable = struct
-  module Cstruct = struct
-    type t = Cstruct.t
-
-    let equal = Cstruct.equal
-    let pp fmt t = Format.pp_print_string fmt ([%show: string] (Cstruct.to_string t))
-  end
-
-  module Z = struct
-    type t = Z.t
-
-    let equal = Z.equal
-    let pp fmt t = Format.pp_print_string fmt (Z.to_string t)
-  end
-end
-
 type t =
   | Null
   | Bool of bool
-  | Integer of Derivable.Z.t
-  | Bit_string of Derivable.Cstruct.t
-  | Octet_string of Derivable.Cstruct.t
+  | Integer of Z.t
+  | Bit_string of Cstruct.t
+  | Octet_string of Cstruct.t
   | Oid of Asn.OID.t
   | Generalized_time of Ptime.t
   | Utc_time of Ptime.t
@@ -37,7 +21,6 @@ type t =
   | Enumerated of int
   | Sequence of t list
   | Set of t list
-[@@deriving eq,show]
 
 let as_choice_grammar =
   let open Asn.S in
