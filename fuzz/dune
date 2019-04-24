@@ -8,3 +8,13 @@
  (name fuzz)
  (modules fuzz)
  (libraries any asn1-combinators))
+
+(executable
+ (name test)
+ (modules test)
+ (libraries alcotest any))
+
+(alias
+ (name fuzz-test)
+ (deps test.exe)
+ (action (run %{deps})))
