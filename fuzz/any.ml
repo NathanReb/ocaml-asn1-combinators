@@ -1,9 +1,17 @@
+module Derivable = struct
+  module Cstruct = struct
+    type t = Cstruct.t
+    let equal = Cstruct.equal
+    let pp fmt t = Format.pp_print_string fmt ([%show: string] (Cstruct.to_string t))
+  end
+end
+
 type ('bit_string, 'integer) t =
   | Null
   | Bool of bool
   | Integer of 'integer
   | Bit_string of 'bit_string
-  | Octet_string of Cstruct.t
+  | Octet_string of Derivable.Cstruct.t
   | Oid of Asn.OID.t
   | Generalized_time of Ptime.t
   | Utc_time of Ptime.t
@@ -18,10 +26,11 @@ type ('bit_string, 'integer) t =
   | General_string of string
   | Universal_string of string
   | Bmp_string of string
-  | Explicit_octet_string of Cstruct.t
+  | Explicit_octet_string of Derivable.Cstruct.t
   | Enumerated of int
   | Sequence of ('bit_string, 'integer) t list
   | Set of ('bit_string, 'integer) t list
+[@@deriving eq,show]
 
 let as_choice_grammar ~bit_string_grammar ~integer_grammar =
   let open Asn.S in
