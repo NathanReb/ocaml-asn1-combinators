@@ -17,3 +17,8 @@
  (name fuzz-test)
  (deps test.exe)
  (action (run %{deps})))
+
+(alias
+ (name bun-fuzz)
+ (deps fuzz.exe (source_tree input))
+ (action (run timeout --preserve-status 50m bun -v --input=input --output=output -- ./fuzz.exe)))
