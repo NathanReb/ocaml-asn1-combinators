@@ -18,6 +18,7 @@ type ('bit_string, 'integer) t =
   | General_string of string
   | Universal_string of string
   | Bmp_string of string
+  | Explicit_octet_string of Cstruct.t
   | Enumerated of int
   | Sequence of ('bit_string, 'integer) t list
   | Set of ('bit_string, 'integer) t list
