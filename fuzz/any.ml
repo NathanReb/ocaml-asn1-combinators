@@ -18,19 +18,21 @@ type ('bit_string, 'integer) t =
   | General_string of string
   | Universal_string of string
   | Bmp_string of string
+  | Explicit_octet_string of Cstruct.t
   | Enumerated of int
   | Sequence of ('bit_string, 'integer) t list
   | Set of ('bit_string, 'integer) t list
 
 let as_choice_grammar ~bit_string_grammar ~integer_grammar =
   let open Asn.S in
+  let explicit_os = explicit 0 octet_string in
   fix
     (fun self ->
        choice4
          (choice6 null bool integer_grammar bit_string_grammar octet_string oid)
          (choice6 generalized_time utc_time utf8_string numeric_string printable_string teletex_string)
          (choice6 videotex_string ia5_string graphic_string visible_string general_string universal_string)
-         (choice4 bmp_string (enumerated (fun i -> i) (fun i -> i)) (sequence_of self) (set_of self)))
+         (choice5 bmp_string explicit_os (enumerated (fun i -> i) (fun i -> i)) (sequence_of self) (set_of self)))
 
 let rec from_choice = function
   | `C1 (`C1 ()) -> Null
@@ -55,9 +57,10 @@ let rec from_choice = function
   | `C3 (`C6 str) -> Universal_string str
 
   | `C4 (`C1 str) -> Bmp_string str
-  | `C4 (`C2 i) -> Enumerated i
-  | `C4 (`C3 l) -> Sequence (List.map from_choice l)
-  | `C4 (`C4 l) -> Set (List.map from_choice l)
+  | `C4 (`C2 cs) -> Explicit_octet_string cs
+  | `C4 (`C3 i) -> Enumerated i
+  | `C4 (`C4 l) -> Sequence (List.map from_choice l)
+  | `C4 (`C5 l) -> Set (List.map from_choice l)
 
 let rec to_choice = function
   | Null -> `C1 (`C1 ())
@@ -82,9 +85,10 @@ let rec to_choice = function
   | Universal_string str -> `C3 (`C6 str)
 
   | Bmp_string str -> `C4 (`C1 str)
-  | Enumerated i -> `C4 (`C2 i)
-  | Sequence l -> `C4 (`C3 (List.map to_choice l))
-  | Set l -> `C4 (`C4 (List.map to_choice l))
+  | Explicit_octet_string cs -> `C4 (`C2 cs)
+  | Enumerated i -> `C4 (`C3 i)
+  | Sequence l -> `C4 (`C4 (List.map to_choice l))
+  | Set l -> `C4 (`C5 (List.map to_choice l))
 
 let grammar =
   let open Asn.S in
