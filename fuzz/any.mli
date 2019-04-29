@@ -1,8 +1,8 @@
-type t =
+type ('bit_string, 'integer) t =
   | Null
   | Bool of bool
-  | Integer of Z.t
-  | Bit_string of Cstruct.t
+  | Integer of 'integer
+  | Bit_string of 'bit_string
   | Octet_string of Cstruct.t
   | Oid of Asn.OID.t
   | Generalized_time of Ptime.t
@@ -19,12 +19,18 @@ type t =
   | Universal_string of string
   | Bmp_string of string
   | Enumerated of int
-  | Sequence of t list
-  | Set of t list
+  | Sequence of ('bit_string, 'integer) t list
+  | Set of ('bit_string, 'integer) t list
 [@@deriving eq,show]
 
-val grammar : t Asn.t
+val grammar : (Cstruct.t, Z.t) t Asn.t
+val grammar' : (bool array, int) t Asn.t
+val grammar'' : (int list, Z.t) t Asn.t
 
-val ber_codec : t Asn.codec
+val ber_codec : (Cstruct.t, Z.t) t Asn.codec
+val ber_codec' : (bool array, int) t Asn.codec
+val ber_codec'' : (int list, Z.t) t Asn.codec
 
-val decode_ber : Cstruct.t -> (t, string) result
+val decode_ber : Cstruct.t -> ((Cstruct.t, Z.t) t, string) result
+val decode_ber' : Cstruct.t -> ((bool array, int) t, string) result
+val decode_ber'' : Cstruct.t -> ((int list, Z.t) t, string) result

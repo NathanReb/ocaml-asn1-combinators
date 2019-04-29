@@ -1,8 +1,8 @@
-type t =
+type ('bit_string, 'integer) t =
   | Null
   | Bool of bool
-  | Integer of Z.t
-  | Bit_string of Cstruct.t
+  | Integer of 'integer
+  | Bit_string of 'bit_string
   | Octet_string of Cstruct.t
   | Oid of Asn.OID.t
   | Generalized_time of Ptime.t
@@ -19,15 +19,15 @@ type t =
   | Universal_string of string
   | Bmp_string of string
   | Enumerated of int
-  | Sequence of t list
-  | Set of t list
+  | Sequence of ('bit_string, 'integer) t list
+  | Set of ('bit_string, 'integer) t list
 
-let as_choice_grammar =
+let as_choice_grammar ~bit_string_grammar ~integer_grammar =
   let open Asn.S in
   fix
     (fun self ->
        choice4
-         (choice6 null bool integer bit_string_cs octet_string oid)
+         (choice6 null bool integer_grammar bit_string_grammar octet_string oid)
          (choice6 generalized_time utc_time utf8_string numeric_string printable_string teletex_string)
          (choice6 videotex_string ia5_string graphic_string visible_string general_string universal_string)
          (choice4 bmp_string (enumerated (fun i -> i) (fun i -> i)) (sequence_of self) (set_of self)))
@@ -35,8 +35,8 @@ let as_choice_grammar =
 let rec from_choice = function
   | `C1 (`C1 ()) -> Null
   | `C1 (`C2 b) -> Bool b
-  | `C1 (`C3 z) -> Integer z
-  | `C1 (`C4 cs) -> Bit_string cs
+  | `C1 (`C3 integer) -> Integer integer
+  | `C1 (`C4 bit_string) -> Bit_string bit_string
   | `C1 (`C5 cs) -> Octet_string cs
   | `C1 (`C6 oid) -> Oid oid
 
@@ -86,7 +86,18 @@ let rec to_choice = function
   | Sequence l -> `C4 (`C3 (List.map to_choice l))
   | Set l -> `C4 (`C4 (List.map to_choice l))
 
-let grammar = Asn.S.map from_choice to_choice as_choice_grammar
+let grammar =
+  let open Asn.S in
+  map from_choice to_choice (as_choice_grammar ~bit_string_grammar:bit_string_cs ~integer_grammar:integer)
+
+let grammar' =
+  let open Asn.S in
+  map from_choice to_choice (as_choice_grammar ~bit_string_grammar:bit_string ~integer_grammar:int)
+
+let grammar'' =
+  let open Asn.S in
+  let flags = List.init 100 (fun i -> (i, i)) in
+  map from_choice to_choice (as_choice_grammar ~bit_string_grammar:(bit_string_flags flags) ~integer_grammar:integer)
 
 let decode_all ~codec ~name cs =
   match Asn.decode codec cs with
@@ -95,5 +106,9 @@ let decode_all ~codec ~name cs =
   | Error (`Parse s) -> Error s
 
 let ber_codec = Asn.(codec ber grammar)
+let ber_codec' = Asn.(codec ber grammar')
+let ber_codec'' = Asn.(codec ber grammar'')
 
 let decode_ber = decode_all ~codec:ber_codec ~name:"Any"
+let decode_ber' = decode_all ~codec:ber_codec' ~name:"Any'"
+let decode_ber'' = decode_all ~codec:ber_codec'' ~name:"Any''"
