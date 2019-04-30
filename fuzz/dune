@@ -16,7 +16,7 @@
 (alias
  (name fuzz-test)
  (deps test.exe)
- (action (run %{deps})))
+ (action (run %{deps} -e)))
 
 (alias
  (name bun-fuzz)
